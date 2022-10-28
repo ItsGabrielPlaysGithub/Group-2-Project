@@ -1,5 +1,6 @@
 import pygame
 import random
+from BUTTON import Button
 
 pygame.init()
 screen = pygame.display.set_mode((800,600))
@@ -144,6 +145,7 @@ while gamerun == True:
         if event.type == pygame.QUIT:
             gamerun = False
 
+
         # ======== pressed button ======== #
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
@@ -196,6 +198,12 @@ while gamerun == True:
         pygame.draw.rect(screen, (100, 0, 0), pygame.Rect(0,0,800,600), 10)
         screen.blit(blackimage,(0,0))
         screen.blit(pausetext, (pausetext.get_rect(center=(400,40))))
+
+        # get the class "Button" in order to make button 3 work (which is back button when paused) #
+        button3 = Button('Back', 200, 40, (300, 300), 6)
+        button3.draw_button()
+        if button3.pressed:
+            gamerun = False
         pygame.display.update()
 
     else:
