@@ -15,6 +15,7 @@ bgpng = pygame.image.load("background.png")
 scorefont = pygame.font.Font("munro-small.ttf", 50)
 p1score = 0
 p2score = 0
+scoredisplay = ""
 
 isplayer1won = False
 isplayer2won = False
@@ -137,6 +138,7 @@ def pause(state):
 # ################################################################################################################## #
 
 while gamerun == True:
+
     gametickspeed = speed.tick(120)  # always tick speed in 120 fps to prevent unexpected fast or slow game speed.
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -167,6 +169,8 @@ while gamerun == True:
             # if pressed space then pause #
             if event.key == pygame.K_SPACE:
                 pause(gameresume)
+            if event.key == pygame.K_ESCAPE:
+                gamerun = False
 
         # ======== released button ======== #
         if event.type == pygame.KEYUP:
