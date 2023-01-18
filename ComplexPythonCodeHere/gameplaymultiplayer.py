@@ -23,8 +23,17 @@ class Playerserve(ServeGoaledBall):
         self.bally = self.playery + 18 # this plus 18 helps to center the ball from the tray image so don't change
         return self.ballx, self.bally
 
+defaulttick = 200
+tick = defaulttick
+class ServeTime:
+    def __init__(self, tick):
+        self.servetime = tick
+
+    def timer(self):
+        return self.servetime - 1
+
 # ball trail effect #
-class ballrayeffect:
+class BallRayEffect:
     def __init__(self,ballx,bally):
         self.ballx = ballx
         self.bally = bally
@@ -35,20 +44,20 @@ class ballrayeffect:
     def assign(self):
         for i in range(10,0-1,-1):
             if i != 0:
-                ballrayeffect.effectx[i] = ballrayeffect.effectx[i - 1]
-                ballrayeffect.effecty[i] = ballrayeffect.effecty[i - 1]
+                BallRayEffect.effectx[i] = BallRayEffect.effectx[i - 1]
+                BallRayEffect.effecty[i] = BallRayEffect.effecty[i - 1]
                 # print(ballrayeffect.effectx)
             elif i == 0:
-                ballrayeffect.effectx[i] = self.ballx
-                ballrayeffect.effecty[i] = self.bally
+                BallRayEffect.effectx[i] = self.ballx
+                BallRayEffect.effecty[i] = self.bally
 
     def start(self):
         for i in range(10,0-1,-1):
-            balleffectpng.set_alpha(128/(i+1))
-            screen.blit(balleffectpng, (ballrayeffect.effectx[i], ballrayeffect.effecty[i]))
-
-
-
+            if isplayer1won == True or isplayer2won == True:
+                balleffectpng.set_alpha(0)
+            else:
+                balleffectpng.set_alpha(128/(i+1))
+            screen.blit(balleffectpng, (BallRayEffect.effectx[i], BallRayEffect.effecty[i]))
 
 
 
@@ -69,6 +78,8 @@ gameresume = True  # to toggle pause and resume
 
 # ======== load background images ======== #
 bgpng = pygame.image.load("background.png")
+scorep1png = pygame.image.load("background1score.png")
+scorep2png = pygame.image.load("background2score.png")
 
 # ======== load scores text and game_over functions ======== (see below to find blit text on screen) #
 scorefont = pygame.font.Font("munro-small.ttf", 50)
@@ -98,6 +109,19 @@ def scorenumbers(): #This function helps to teleport ball if ball hits the goal.
         # bally = 286
         return p2score, turn
 turn = 0
+
+def ScoreAnimation():
+    global scoretick
+    if isplayer1won == True or isplayer2won == True:
+        i = 0
+    else: i = 128
+
+    scorep2png.set_alpha(i)
+    if turn == 1:
+        screen.blit(scorep2png, (0, 0))
+    elif turn == 2:
+        screen.blit(scorep1png, (0, 0))
+scoretick = 0
 
 def gameover(a,b):
     global scoredisplay,ballx,ballxd,ballyd,isplayer1won,isplayer2won
@@ -143,11 +167,11 @@ ballpng = pygame.image.load("ball.png")
 balleffectpng = pygame.image.load("balleffect.png")
 ballx = 386
 bally = 286
-ballserve = [-2.0,2.0]
+ballserve = [-3.0,3.0]
 ballxd = random.choice(ballserve)
 ballyd = -1.0
 def ball(x,y):
-    brf = ballrayeffect(ballx,bally)
+    brf = BallRayEffect(ballx,bally)
     brf.assign()
     brf.start()
     screen.blit(ballpng,(x,y))
@@ -163,14 +187,15 @@ def bounce():
         ballx = 37
         ballxd *= -1
         if ((bally + 28 >= player1y + 24) and (bally <= player1y + 40)):
-            anglenear = [0.3,-0.3,0.5,-0.5]
+            anglenear = [0.3,-0.3,0.7,-0.7]
             ballyd = random.choice(anglenear)
             print(ballyd)
         elif ((bally+28 >= player1y)and(bally <= player1y + 64)):
-            anglefar = [1.0,-1.0,1.5,-1.5]
+            anglefar = [1.0,-1.0,2.5,-2.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
-        ballxd += 0.2  # increase speed of ball movement
+        if ballxd < 13: ballxd += 0.2 # increase speed of ball movement
+        else: ballxd = 13
         ballwav.play()
 
     br = 28 # br means "bottom right", this is for player2
@@ -178,14 +203,15 @@ def bounce():
         ballx = 735
         ballxd *= -1
         if ((bally + 28 >= player2y + 24) and (bally <= player2y + 40)):
-            anglenear = [0.3,-0.3,0.5,-0.5]
+            anglenear = [0.3,-0.3,0.7,-0.7]
             ballyd = random.choice(anglenear)
             print(ballyd)
         elif ((bally+28 >= player2y)and(bally <= player2y + 64)):
-            anglefar = [1.0,-1.0,1.5,-1.5]
+            anglefar = [1.0,-1.0,2.5,-2.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
-        ballxd -= 0.2  # increase speed of ball movement
+        if ballxd < 13: ballxd -= 0.2  # increase speed of ball movement
+        else: ballxd = 13
         ballwav.play()
 
     return ballyd,ballxd
@@ -214,7 +240,7 @@ def pause(state):
 
 while gamerun == True:
 
-    gametickspeed = speed.tick(120)  # always tick speed lock on 120 fps to prevent unexpected fast or slow game speed.
+    gametickspeed = speed.tick(220)  # always tick speed lock on 220 fps to prevent unexpected fast or slow game speed.
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             gamerun = False
@@ -224,12 +250,18 @@ while gamerun == True:
         if event.type == pygame.KEYDOWN:
 
             # player-serve buttons
-            if event.key == pygame.K_x and turn == 1:
-                ballxd = 2.0
-                turn = 0
-            elif event.key == pygame.K_RSHIFT and turn == 2:
-                ballxd = -2.0
-                turn = 0
+            if turn == 1:
+                if event.key == pygame.K_LSHIFT:
+                    ballxd = 2.0
+                    turn = 0
+                    tick = defaulttick
+
+            elif turn == 2:
+                if event.key == pygame.K_RSHIFT:
+                    ballxd = -2.0
+                    turn = 0
+                    tick = defaulttick
+
 
             # player-movement buttons
             if event.key == pygame.K_w:
@@ -302,6 +334,7 @@ while gamerun == True:
         scoretext = scorefont.render(scoredisplay, False, (100, 100, 100))
         centerposition = scoretext.get_rect(center=(400, 295))
         scorenumbers()
+        ScoreAnimation()
         screen.blit(scoretext, centerposition)
 
         # display ball and its changed position #
@@ -312,14 +345,27 @@ while gamerun == True:
         ball(ballx, bally)
 
         if turn != 0:
+            print(tick)
+            timer = ServeTime(tick)
+            tick = timer.timer()
             if turn == 1:
                 ballscene = Playerserve(ballx, bally, 38, player1y)
                 ballscene.holdplayer()
                 ballx,bally = ballscene.ballx,ballscene.bally
+                if timer.timer() == 0:
+                    ballxd = 2.0
+                    turn = 0
+                    tick = defaulttick
+
             elif turn == 2:
                 ballscene = Playerserve(ballx, bally, 734, player2y)
                 ballscene.holdplayer()
                 ballx, bally = ballscene.ballx, ballscene.bally
+                if timer.timer() == 0:
+                    ballxd = -2.0
+                    turn = 0
+                    tick = defaulttick
+
 
         # display player 1 and 2 and its changed position #
         player1y += player1yd
