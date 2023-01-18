@@ -23,6 +23,34 @@ class Playerserve(ServeGoaledBall):
         self.bally = self.playery + 18 # this plus 18 helps to center the ball from the tray image so don't change
         return self.ballx, self.bally
 
+# ball trail effect #
+class ballrayeffect:
+    def __init__(self,ballx,bally):
+        self.ballx = ballx
+        self.bally = bally
+
+    effectx = [0,1,2,3,4,5,6,7,8,9,10]
+    effecty = [0,1,2,3,4,5,6,7,8,9,10]
+
+    def assign(self):
+        for i in range(10,0-1,-1):
+            if i != 0:
+                ballrayeffect.effectx[i] = ballrayeffect.effectx[i - 1]
+                ballrayeffect.effecty[i] = ballrayeffect.effecty[i - 1]
+                # print(ballrayeffect.effectx)
+            elif i == 0:
+                ballrayeffect.effectx[i] = self.ballx
+                ballrayeffect.effecty[i] = self.bally
+
+    def start(self):
+        for i in range(10,0-1,-1):
+            balleffectpng.set_alpha(128/(i+1))
+            screen.blit(balleffectpng, (ballrayeffect.effectx[i], ballrayeffect.effecty[i]))
+
+
+
+
+
 
 # ========================================================================== #
 
@@ -112,12 +140,16 @@ def player2(x,y):
 
 # ======== Ball images ========== #
 ballpng = pygame.image.load("ball.png")
+balleffectpng = pygame.image.load("balleffect.png")
 ballx = 386
 bally = 286
 ballserve = [-2.0,2.0]
 ballxd = random.choice(ballserve)
 ballyd = -1.0
 def ball(x,y):
+    brf = ballrayeffect(ballx,bally)
+    brf.assign()
+    brf.start()
     screen.blit(ballpng,(x,y))
 def corner(y):
     global ballyd
