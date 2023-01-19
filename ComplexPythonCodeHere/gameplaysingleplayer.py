@@ -4,6 +4,7 @@ from maingame import Button
 
 pygame.init()
 screen = pygame.display.set_mode((800,600))
+AI_debug = False # enable or disable, developer only
 
 # ===============================CLASS====================================== #
 # this is update for complex #
@@ -112,7 +113,9 @@ class BouncePath():
 
     def bouncepath(self, pos1, pos2):
         # print(pos1,pos2)
-        pygame.draw.line(screen, "yellow", (pos1), (pos2), 1)
+        if AI_debug:
+            pygame.draw.line(screen, "yellow", (pos1), (pos2), 1)
+
 
 class AI:
     def __init__(self, playery):
@@ -120,19 +123,32 @@ class AI:
         pass
 
 class AIPlayer(AI):
-    def __init__(self, playery, where): # "where" is a y-coordinate to tell where AI to stop.
+    def __init__(self, playery=300.0, where=300.0): # "where" is a y-coordinate to tell where AI to stop.
         super().__init__(playery)
         self.where = where
     def gopath(self):
         global player2yd # will be removed... this sucks.
-        if self.where == self.playery:
+        if abs(self.where-self.playery) <= 20:
             player2yd = 0
         elif self.where < self.playery:
             player2yd = -4.0
         elif self.where > self.playery:
             player2yd = 4.0
 
+reaction = 2
+class ReactionTime:
+    def __init__(self, tick):
+        self.tick = tick
+    steady = 20
+    easy = 1
+    hard = 0
 
+    def timer(self):
+        print(f"[[[[[[[[[[[[[[[[[[[[[[[[[{self.tick}]]]]]]]]]]]]]]]]]]]]]]")
+        if self.tick == 0:
+            reset = random.choices([self.hard,self.easy,self.steady], weights=[100,22,1], k=1)
+            return reset[0]
+        return self.tick - 1
 
 
 # ========================= Importing =============================== #
@@ -151,7 +167,7 @@ gamerun = True  # to run whole game window
 gameresume = True  # to toggle pause and resume
 
 # ======== load background images ======== #
-bgpng = pygame.image.load("background.png")
+bgpng = pygame.image.load("backgroundwater.png")
 scorep1png = pygame.image.load("background1score.png")
 scorep2png = pygame.image.load("background2score.png")
 
@@ -277,11 +293,11 @@ def bounce():
         ballx = 735
         ballxd *= -1
         if ((bally + 28 >= player2y + 24) and (bally <= player2y + 40)):
-            anglenear = [0.3,-0.3,0.7,-0.7]
+            anglenear = [0.3,-0.3,0.8,-0.8]
             ballyd = random.choice(anglenear)
             print(ballyd)
         elif ((bally+28 >= player2y)and(bally <= player2y + 64)):
-            anglefar = [1.0,-1.0,2.5,-2.5]
+            anglefar = [1.3,-1.3,3.5,-3.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
         if ballxd < 11: ballxd -= 0.2  # increase speed of ball movement
@@ -315,7 +331,7 @@ def pause(state):
 
 while gamerun == True:
 
-    gametickspeed = speed.tick(220)  # always tick speed lock on 220 fps to prevent unexpected fast or slow game speed.
+    gametickspeed = speed.tick(120)  # always tick speed lock on 120 fps to prevent unexpected fast or slow game speed.
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             gamerun = False
@@ -444,9 +460,7 @@ while gamerun == True:
         # THE AI inside resume-only loops #
 
         target = PathFinder(bally, 14)
-        target.target()
         playercord = PathFinder(player2y, 32)
-        playercord.target()
 
         ballmove = BouncePath(ballx+14,bally+14)
         # if try1.ispath() == True:
@@ -464,46 +478,63 @@ while gamerun == True:
         # yellow line 1
         linemove = BouncePath(ballx+14,bally+14)
         inter = linemove.lineinter(pos, ydirection())
-        pygame.draw.rect(screen, (250,128,114), [inter[0]-5, inter[1]-5, 10, 10], 0)
-        linemove.bouncepath(pos1,inter)
+        linemove.bouncepath(pos1, inter)
+
 
         # yellow line 2
         linemove2 = BouncePath(ballx + 14, bally + 14)
         inter2 = linemove2.lineinter((inter, (inter[0] + (2 / pos[1][0] - pos[0][0]), inter[1] + (pos[1][1] - pos[0][1]))), [[0, 14], [800, 14]])
         if inter[1] < 300:
             inter2 = linemove2.lineinter((inter,(inter[0]+(2/pos[1][0]-pos[0][0]),inter[1]+(pos[1][1]-pos[0][1]))), [[0, 586], [800, 586]])
-        pygame.draw.rect(screen, (250, 128, 114), [inter2[0] - 5, inter2[1] - 5, 10, 10], 0)
         linemove2.bouncepath(inter, inter2)
 
 
-        vertical_line1 = [[500, 0], [400, 600]]
+        vertical_line1 = [[600, 0], [600, 600]]
         # Predict path 1
         intersectfinal1 = BouncePath(None, None).lineinter((pos1, pos2), vertical_line1)
         predict1cord = PathFinder(intersectfinal1[1], 0)
-        pygame.draw.rect(screen, (250, 128, 114), [vertical_line1[0][0] - 5, vertical_line1[0][1] - 5, 5, 600], 0)
-        pygame.draw.rect(screen, (250, 208, 114), [intersectfinal1[0] - 5, intersectfinal1[1] - 5, 20, 20], 0)
-        predict1cord.target()
 
         # Predict path 2
         intersectfinal2 = BouncePath(None,None).lineinter((inter,inter2),vertical_line1)
         predict2cord = PathFinder(intersectfinal2[1], 0)
-        pygame.draw.rect(screen, (250, 128, 114), [vertical_line1[0][0] - 5, vertical_line1[0][1] - 5, 5, 600], 0)
-        pygame.draw.rect(screen, (250, 208, 114), [intersectfinal2[0] - 5, intersectfinal2[1] - 5, 20, 20], 0)
-        predict2cord.target()
 
-        playery_where = playercord.y, random.choice([predict1cord.y - 50, predict1cord.y + 50])
-        which_follow = "predict 1"
-        if not(0 <= intersectfinal1[1] <= 600) and ballx < 400:
-            playery_where = playercord.y, random.choice([predict2cord.y - 50, predict2cord.y + 50])
-            which_follow = "predict 2"
-        elif ballx >= 500:
-            playery_where = playercord.y, random.choice([target.y-10,target.y+10])
-            which_follow = "GET BALL FAST"
+        def updatepath():
+            globals()
+            playery_where = playercord.y, random.uniform(predict1cord.y - 100, predict1cord.y + 100)
+            which_follow = "predict 1"
+            if not(0 <= intersectfinal1[1] <= 600) and ballx < 600:
+                playery_where = playercord.y, random.uniform(predict2cord.y - 100, predict2cord.y + 100)
+                which_follow = "predict 2"
+            elif ballx >= 500:
+                playery_where = playercord.y, random.uniform(target.y-0,target.y+0)
+                which_follow = "GET BALL FAST"
+            return playery_where, which_follow
 
-        player2control = AIPlayer(playery_where[0], playery_where[1])
-        print(which_follow)
-        # player2control = AIPlayer(playercord.y, random.choice([target.y-50,target.y+50]))
+        # reaction time for AI #
+        React = ReactionTime(reaction)
+        reaction = React.timer()
+        if reaction == 0:
+            playery = updatepath()[0][0]
+            where = updatepath()[0][1]
+            player2control = AIPlayer(playery, where)
+        else:
+            player2control = AIPlayer()
+        print(updatepath()[1])
         player2control.gopath()
+
+        # IF show AI debug is true
+        if AI_debug == True:
+            target.target()
+            playercord.target()
+            predict1cord.target()
+            predict2cord.target()
+
+            pygame.draw.rect(screen, (250,128,114), [inter[0]-5, inter[1]-5, 10, 10], 0)
+            pygame.draw.rect(screen, (250, 128, 114), [inter2[0] - 5, inter2[1] - 5, 10, 10], 0)
+            pygame.draw.rect(screen, (250, 128, 114), [vertical_line1[0][0] - 5, vertical_line1[0][1] - 5, 5, 600], 0)
+            pygame.draw.rect(screen, (250, 208, 114), [intersectfinal1[0] - 5, intersectfinal1[1] - 5, 20, 20], 0)
+            pygame.draw.rect(screen, (250, 128, 114), [vertical_line1[0][0] - 5, vertical_line1[0][1] - 5, 5, 600], 0)
+            pygame.draw.rect(screen, (250, 208, 114), [intersectfinal2[0] - 5, intersectfinal2[1] - 5, 20, 20], 0)
 
         # display player 1 and 2 and its changed position #
         player1y += player1yd
