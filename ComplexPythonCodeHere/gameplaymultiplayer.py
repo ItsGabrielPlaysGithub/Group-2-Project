@@ -81,6 +81,11 @@ bgpng = pygame.image.load("background.png")
 scorep1png = pygame.image.load("background1score.png")
 scorep2png = pygame.image.load("background2score.png")
 
+scorep1x = 0
+scorep2x = 0
+scorep1xd = 0
+scorep2xd = 0
+
 # ======== load scores text and game_over functions ======== (see below to find blit text on screen) #
 scorefont = pygame.font.Font("munro-small.ttf", 50)
 p1score = 0
@@ -111,17 +116,26 @@ def scorenumbers(): #This function helps to teleport ball if ball hits the goal.
 turn = 0
 
 def ScoreAnimation():
-    global scoretick
+    global scorep1x, scorep2x, scorep1xd, scorep2xd
     if isplayer1won == True or isplayer2won == True:
         i = 0
     else: i = 128
 
+    scorep1png.set_alpha(i)
     scorep2png.set_alpha(i)
-    if turn == 1:
-        screen.blit(scorep2png, (0, 0))
+    if turn == 0:
+        scorep1x = 0
+        scorep2x = 0
+        scorep1xd = 0
+        scorep2xd = 0
+    elif turn == 1:
+        screen.blit(scorep2png, (scorep2x, 0))
+        scorep2xd = 1
     elif turn == 2:
-        screen.blit(scorep1png, (0, 0))
-scoretick = 0
+        screen.blit(scorep1png, (scorep1x, 0))
+        scorep1xd = 1
+    scorep1x += scorep1xd
+    scorep2x -= scorep2xd
 
 def gameover(a,b):
     global scoredisplay,ballx,ballxd,ballyd,isplayer1won,isplayer2won
@@ -187,15 +201,17 @@ def bounce():
         ballx = 37
         ballxd *= -1
         if ((bally + 28 >= player1y + 24) and (bally <= player1y + 40)):
-            anglenear = [0.3,-0.3,0.7,-0.7]
+            anglenear = [0.3,-0.3,0.8,-0.8]
             ballyd = random.choice(anglenear)
             print(ballyd)
         elif ((bally+28 >= player1y)and(bally <= player1y + 64)):
-            anglefar = [1.0,-1.0,2.5,-2.5]
+            anglefar = [1.3,-1.3,3.5,-3.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
-        if ballxd < 13: ballxd += 0.2 # increase speed of ball movement
-        else: ballxd = 13
+        if ballxd < 8:
+            ballxd += 0.2 # increase speed of ball movement
+        else:
+            ballxd = 8
         ballwav.play()
 
     br = 28 # br means "bottom right", this is for player2
@@ -203,15 +219,17 @@ def bounce():
         ballx = 735
         ballxd *= -1
         if ((bally + 28 >= player2y + 24) and (bally <= player2y + 40)):
-            anglenear = [0.3,-0.3,0.7,-0.7]
+            anglenear = [0.3,-0.3,0.8,-0.8]
             ballyd = random.choice(anglenear)
             print(ballyd)
         elif ((bally+28 >= player2y)and(bally <= player2y + 64)):
-            anglefar = [1.0,-1.0,2.5,-2.5]
+            anglefar = [1.3,-1.3,3.5,-3.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
-        if ballxd < 13: ballxd -= 0.2  # increase speed of ball movement
-        else: ballxd = 13
+        if ballxd < 8:
+            ballxd -= 0.2  # increase speed of ball movement
+        else:
+            ballxd = 8
         ballwav.play()
 
     return ballyd,ballxd

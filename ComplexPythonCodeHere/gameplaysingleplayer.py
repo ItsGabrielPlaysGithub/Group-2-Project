@@ -4,7 +4,7 @@ from maingame import Button
 
 pygame.init()
 screen = pygame.display.set_mode((800,600))
-AI_debug = False # enable or disable, developer only
+AI_debug = True # enable or disable, developer only
 
 # ===============================CLASS====================================== #
 # this is update for complex #
@@ -146,7 +146,7 @@ class ReactionTime:
     def timer(self):
         print(f"[[[[[[[[[[[[[[[[[[[[[[[[[{self.tick}]]]]]]]]]]]]]]]]]]]]]]")
         if self.tick == 0:
-            reset = random.choices([self.hard,self.easy,self.steady], weights=[100,22,1], k=1)
+            reset = random.choices([self.hard,self.easy,self.steady], weights=[125,5,1], k=1)
             return reset[0]
         return self.tick - 1
 
@@ -170,6 +170,13 @@ gameresume = True  # to toggle pause and resume
 bgpng = pygame.image.load("backgroundwater.png")
 scorep1png = pygame.image.load("background1score.png")
 scorep2png = pygame.image.load("background2score.png")
+
+mouse = 300
+
+scorep1x = 0
+scorep2x = 0
+scorep1xd = 0
+scorep2xd = 0
 
 # ======== load scores text and game_over functions ======== (see below to find blit text on screen) #
 scorefont = pygame.font.Font("munro-small.ttf", 50)
@@ -201,23 +208,33 @@ def scorenumbers(): #This function helps to teleport ball if ball hits the goal.
 turn = 0
 
 def ScoreAnimation():
-    global scoretick
+    global scorep1x, scorep2x, scorep1xd, scorep2xd
     if isplayer1won == True or isplayer2won == True:
         i = 0
     else: i = 128
 
+    scorep1png.set_alpha(i)
     scorep2png.set_alpha(i)
-    if turn == 1:
-        screen.blit(scorep2png, (0, 0))
+    if turn == 0:
+        scorep1x = 0
+        scorep2x = 0
+        scorep1xd = 0
+        scorep2xd = 0
+    elif turn == 1:
+        screen.blit(scorep2png, (scorep2x, 0))
+        scorep2xd = 1
     elif turn == 2:
-        screen.blit(scorep1png, (0, 0))
-scoretick = 0
+        screen.blit(scorep1png, (scorep1x, 0))
+        scorep1xd = 1
+    scorep1x += scorep1xd
+    scorep2x -= scorep2xd
+
 
 def gameover(a,b):
     global scoredisplay,ballx,ballxd,ballyd,isplayer1won,isplayer2won
     winscore = 10
     if a == winscore:
-        scoredisplay = "Player 1 won!!!"
+        scoredisplay = "You won!!!"
         ballx = 386
         ballxd = 0
         ballyd = 0
@@ -225,7 +242,7 @@ def gameover(a,b):
         isplayer1won = True
         winner_sound.play()
     elif b == winscore:
-        scoredisplay = "Player 2 won!!!"
+        scoredisplay = "You Lose: Git Gud Bozo!!!"
         ballx = 386
         ballxd = 0
         ballyd = 0
@@ -277,15 +294,17 @@ def bounce():
         ballx = 37
         ballxd *= -1
         if ((bally + 28 >= player1y + 24) and (bally <= player1y + 40)):
-            anglenear = [0.3,-0.3,0.7,-0.7]
+            anglenear = [0.3,-0.3,0.8,-0.8]
             ballyd = random.choice(anglenear)
             print(ballyd)
         elif ((bally+28 >= player1y)and(bally <= player1y + 64)):
-            anglefar = [1.0,-1.0,2.5,-2.5]
+            anglefar = [1.3,-1.3,3.5,-3.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
-        if ballxd < 11: ballxd += 0.2 # increase speed of ball movement
-        else: ballxd = 11
+        if ballxd < 8:
+            ballxd += 0.2 # increase speed of ball movement
+        else:
+            ballxd = 8
         ballwav.play()
 
     br = 28 # br means "bottom right", this is for player2
@@ -300,8 +319,10 @@ def bounce():
             anglefar = [1.3,-1.3,3.5,-3.5]
             ballyd = random.choice(anglefar)
             print(ballyd)
-        if ballxd < 11: ballxd -= 0.2  # increase speed of ball movement
-        else: ballxd = 11
+        if ballxd < 10:
+            ballxd -= 0.2  # increase speed of ball movement
+        else:
+            ballxd = 10
         ballwav.play()
 
     return ballyd,ballxd
@@ -331,25 +352,39 @@ def pause(state):
 
 while gamerun == True:
 
-    gametickspeed = speed.tick(120)  # always tick speed lock on 120 fps to prevent unexpected fast or slow game speed.
+    gametickspeed = speed.tick(170)  # always tick speed lock on 120 fps to prevent unexpected fast or slow game speed.
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             gamerun = False
 
 
         # ======== pressed button ======== #
+        mouse_posy = pygame.mouse.get_pos()[1]
+        mouse = mouse_posy
+        mouse += 0
+        mouse_far_level = abs(player1y+32 - mouse)
+
+        if mouse_far_level < 4:
+            player1yd = 0
+        else:
+            if player1y + 32 > mouse:
+                if mouse_far_level < 4:
+                    player1yd = -mouse_far_level
+                else:
+                    player1yd = -4.0
+            if player1y + 32 < mouse:
+                if mouse_far_level < 4:
+                    player1yd = mouse_far_level
+                else:
+                    player1yd = 4.0
+
+
         if event.type == pygame.KEYDOWN:
 
             # player-serve buttons
             if turn == 1:
                 if event.key == pygame.K_LSHIFT:
                     ballxd = 2.0
-                    turn = 0
-                    tick = defaulttick
-
-            elif turn == 2:
-                if event.key == pygame.K_RSHIFT:
-                    ballxd = -2.0
                     turn = 0
                     tick = defaulttick
 
@@ -365,16 +400,6 @@ while gamerun == True:
                 if event.key == pygame.K_d:
                     player1xd = 4.0
 
-            if event.key == pygame.K_UP:
-                player2yd = -4.0
-            if event.key == pygame.K_DOWN:
-                player2yd = 4.0
-            if isplayer2won == True:
-                if event.key == pygame.K_LEFT:
-                    player2xd = -4.0
-                if event.key == pygame.K_RIGHT:
-                    player2xd = 4.0
-
             # if pressed space then pause #
             if event.key == pygame.K_SPACE:
                 pause(gameresume)
@@ -387,11 +412,6 @@ while gamerun == True:
                 player1yd = 0
             if event.key == pygame.K_a or event.key == pygame.K_d:
                 player1xd = 0
-
-            if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                player2yd = 0
-            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                player2xd = 0
 
     if gameresume == False:
         player1x = player1x
@@ -483,13 +503,42 @@ while gamerun == True:
 
         # yellow line 2
         linemove2 = BouncePath(ballx + 14, bally + 14)
-        inter2 = linemove2.lineinter((inter, (inter[0] + (2 / pos[1][0] - pos[0][0]), inter[1] + (pos[1][1] - pos[0][1]))), [[0, 14], [800, 14]])
+        inter2 = linemove2.lineinter((inter,
+                                      (inter[0] + (2 / pos[1][0] - pos[0][0]),
+                                       inter[1] + (pos[1][1] - pos[0][1]))),
+                                     [[0, 14], [800, 14]])
         if inter[1] < 300:
-            inter2 = linemove2.lineinter((inter,(inter[0]+(2/pos[1][0]-pos[0][0]),inter[1]+(pos[1][1]-pos[0][1]))), [[0, 586], [800, 586]])
+            inter2 = linemove2.lineinter((inter,
+                                          (inter[0]+(2/pos[1][0]-pos[0][0]),
+                                           inter[1]+(pos[1][1]-pos[0][1]))),
+                                         [[0, 586], [800, 586]])
         linemove2.bouncepath(inter, inter2)
 
+        # yellow line 3 # This is an experiment
+        linemove3 = BouncePath(ballx + 14, bally + 14)
+        inter3 = linemove3.lineinter((inter2,
+                                      (inter2[0] - (2 / pos[1][0] - pos[0][0]),
+                                       inter2[1] + (pos[1][1] - pos[0][1]))),
+                                     [[0, 14], [800, 14]])
 
-        vertical_line1 = [[600, 0], [600, 600]]
+        if inter2[1] < 300:
+            inter3 = linemove3.lineinter((inter2,
+                                          (inter2[0] - (2 / pos[1][0] - pos[0][0]),
+                                           inter2[1] + (pos[1][1] - pos[0][1]))),
+                                         [[0, 586], [800, 586]])
+        linemove3.bouncepath(inter2, inter3)
+
+        print(f"------------------------------{ballxd}---------------------------------")
+        vertical_line1 = [[500, 0], [500, 600]]
+        if abs(ballxd) >= 3:
+            vertical_line1 = [[550, 0], [550, 600]]
+        elif abs(ballxd) >= 4:
+            vertical_line1 = [[600, 0], [600, 600]]
+        elif abs(ballxd) >= 5:
+            print("now")
+            vertical_line1 = [[620, 0], [620, 600]]
+        elif abs(ballxd) >= 6:
+            vertical_line1 = [[700, 0], [700, 600]]
         # Predict path 1
         intersectfinal1 = BouncePath(None, None).lineinter((pos1, pos2), vertical_line1)
         predict1cord = PathFinder(intersectfinal1[1], 0)
@@ -498,16 +547,23 @@ while gamerun == True:
         intersectfinal2 = BouncePath(None,None).lineinter((inter,inter2),vertical_line1)
         predict2cord = PathFinder(intersectfinal2[1], 0)
 
+        # Predict path 3
+        intersectfinal3 = BouncePath(None, None).lineinter((inter2, inter3), vertical_line1)
+        predict3cord = PathFinder(intersectfinal3[1], 0)
+
         def updatepath():
             globals()
             playery_where = playercord.y, random.uniform(predict1cord.y - 100, predict1cord.y + 100)
-            which_follow = "predict 1"
-            if not(0 <= intersectfinal1[1] <= 600) and ballx < 600:
+            which_follow = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[predict 1]]]]]]]]]]]]]"
+            if not(0 <= intersectfinal1[1] <= 600) and ballx < vertical_line1[0][0]:
                 playery_where = playercord.y, random.uniform(predict2cord.y - 100, predict2cord.y + 100)
-                which_follow = "predict 2"
-            elif ballx >= 500:
+                which_follow = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[predict 2]]]]]]]]]]]]]"
+            if not(0 <= intersectfinal1[1] <= 600) and not(0 <= intersectfinal2[1] <= 600) and ballx < vertical_line1[0][0]:
+                playery_where = playercord.y, random.uniform(predict3cord.y - 100, predict3cord.y + 100)
+                which_follow = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[predict 3]]]]]]]]]]]]]"
+            elif ballx >= vertical_line1[0][0]:
                 playery_where = playercord.y, random.uniform(target.y-0,target.y+0)
-                which_follow = "GET BALL FAST"
+                which_follow = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[GET BALL FAST]]]]]]]]]]]]]"
             return playery_where, which_follow
 
         # reaction time for AI #
@@ -524,6 +580,8 @@ while gamerun == True:
 
         # IF show AI debug is true
         if AI_debug == True:
+            pygame.draw.rect(screen, "green", [0, mouse, 800, 2], 0)
+
             target.target()
             playercord.target()
             predict1cord.target()
@@ -531,10 +589,12 @@ while gamerun == True:
 
             pygame.draw.rect(screen, (250,128,114), [inter[0]-5, inter[1]-5, 10, 10], 0)
             pygame.draw.rect(screen, (250, 128, 114), [inter2[0] - 5, inter2[1] - 5, 10, 10], 0)
+            pygame.draw.rect(screen, (250, 128, 114), [inter3[0] - 5, inter3[1] - 5, 10, 10], 0)
+
             pygame.draw.rect(screen, (250, 128, 114), [vertical_line1[0][0] - 5, vertical_line1[0][1] - 5, 5, 600], 0)
             pygame.draw.rect(screen, (250, 208, 114), [intersectfinal1[0] - 5, intersectfinal1[1] - 5, 20, 20], 0)
-            pygame.draw.rect(screen, (250, 128, 114), [vertical_line1[0][0] - 5, vertical_line1[0][1] - 5, 5, 600], 0)
             pygame.draw.rect(screen, (250, 208, 114), [intersectfinal2[0] - 5, intersectfinal2[1] - 5, 20, 20], 0)
+            pygame.draw.rect(screen, (250, 208, 114), [intersectfinal3[0] - 5, intersectfinal3[1] - 5, 20, 20], 0)
 
         # display player 1 and 2 and its changed position #
         player1y += player1yd
