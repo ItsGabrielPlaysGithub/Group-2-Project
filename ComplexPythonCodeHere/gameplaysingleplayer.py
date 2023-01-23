@@ -4,7 +4,7 @@ from maingame import Button
 
 pygame.init()
 screen = pygame.display.set_mode((800,600))
-AI_debug = True # enable or disable, developer only
+AI_debug = False # enable or disable, developer only
 
 # ===============================CLASS====================================== #
 # this is update for complex #
@@ -170,8 +170,6 @@ gameresume = True  # to toggle pause and resume
 bgpng = pygame.image.load("backgroundwater.png")
 scorep1png = pygame.image.load("background1score.png")
 scorep2png = pygame.image.load("background2score.png")
-
-mouse = 300
 
 scorep1x = 0
 scorep2x = 0
@@ -359,25 +357,6 @@ while gamerun == True:
 
 
         # ======== pressed button ======== #
-        mouse_posy = pygame.mouse.get_pos()[1]
-        mouse = mouse_posy
-        mouse += 0
-        mouse_far_level = abs(player1y+32 - mouse)
-
-        if mouse_far_level < 4:
-            player1yd = 0
-        else:
-            if player1y + 32 > mouse:
-                if mouse_far_level < 4:
-                    player1yd = -mouse_far_level
-                else:
-                    player1yd = -4.0
-            if player1y + 32 < mouse:
-                if mouse_far_level < 4:
-                    player1yd = mouse_far_level
-                else:
-                    player1yd = 4.0
-
 
         if event.type == pygame.KEYDOWN:
 
@@ -580,7 +559,6 @@ while gamerun == True:
 
         # IF show AI debug is true
         if AI_debug == True:
-            pygame.draw.rect(screen, "green", [0, mouse, 800, 2], 0)
 
             target.target()
             playercord.target()
